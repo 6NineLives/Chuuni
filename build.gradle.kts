@@ -143,12 +143,12 @@ jooq {
                         forcedTypes = listOf(
                             ForcedType()
                                 .withUserType("java.util.UUID")
-                                .withBinding("me.abhigya.chunnicore.database.binding.UUIDBinding")
+                                .withBinding("me.abhigya.chuunicore.database.binding.UUIDBinding")
                                 .withIncludeExpression(".*\\.(UUID)\$")
                                 .withIncludeTypes("^UUID\$"),
                             ForcedType()
                                 .withUserType("kotlin.time.Duration")
-                                .withConverter("me.abhigya.chunnicore.database.binding.DurationConverter")
+                                .withConverter("me.abhigya.chuunicore.database.binding.DurationConverter")
                                 .withIncludeExpression(".*\\.(TIME_PLAYED)\$")
                                 .withIncludeTypes(".*")
                         )
@@ -156,7 +156,7 @@ jooq {
                             .withComments(true)
                             .withDaos(true)
                             .withPojos(false)
-                        target.withPackageName("me.abhigya.chunnicore.jooq.codegen")
+                        target.withPackageName("me.abhigya.chuunicore.jooq.codegen")
                             .withDirectory("${project.buildDir}/schema-gen/jooq")
                     }
                 }
@@ -179,7 +179,6 @@ tasks {
         kotlinOptions.suppressWarnings = true
         kotlinOptions.jvmTarget = JAVA_VERSION.toString()
         kotlinOptions.freeCompilerArgs = listOf("-Xjsr305=strict", "-Xjvm-default=all")
-        dependsOn("generateLanguage")
         dependsOn(flywayMigrate)
         dependsOn("generateJooq")
     }
@@ -191,7 +190,7 @@ tasks {
     shadowJar {
         archiveFileName.set("${project.name}.jar")
 
-        val relocatePath = "me.abhigya.glide.libs"
+        val relocatePath = "me.abhigya.chuunicore.libs"
         relocate("toothpick", "$relocatePath.toothpick")
         relocate("xyz.xenondevs.invui", "$relocatePath.inventoryframework.invui")
         relocate("xyz.xenondevs.inventoryaccess", "$relocatePath.inventoryframework.inventoryaccess")
@@ -256,11 +255,11 @@ kapt.includeCompileClasspath = false
 flyway.cleanDisabled = false
 
 bukkit {
-    main = "me.abhigya.chunnicore.ChunniCorePlugin"
-    name = "ChunniCore"
+    main = "me.abhigya.chuunicore.ChuuniCorePlugin"
+    name = "ChuuniCore"
     version = "1.0"
     authors = listOf("Abhigya")
-    description = "Chunni Core plugin"
+    description = "Chuuni Core plugin"
     apiVersion = "1.13"
     libraries = listOf(
         "org.jetbrains.kotlin:kotlin-stdlib:${Toolchain.KOTLIN}",
