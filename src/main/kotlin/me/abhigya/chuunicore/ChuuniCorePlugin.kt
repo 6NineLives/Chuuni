@@ -17,6 +17,7 @@ import me.abhigya.chuunicore.database.sql.mariadb.MySQL
 import me.abhigya.chuunicore.database.sql.postgresql.PostGreSQL
 import me.abhigya.chuunicore.ext.BukkitCoroutineDispatcher
 import me.abhigya.chuunicore.database.DatabaseSettingsValidator
+import me.abhigya.chuunicore.services.hologram.HologramPool
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
@@ -82,6 +83,7 @@ class ChuuniCorePlugin : JavaPlugin(), CoroutineScope by CoroutineScope(
                     MiniMessage.builder().build()
                 }.providesSingleton().providesReleasable()
                 bind<Configs>().toClass<SimpleConfigs>().singleton()
+                bind<HologramPool>().toInstance { HologramPool(coroutineScope = this@ChuuniCorePlugin).also { it.init(this@ChuuniCorePlugin) } }
             }
         )
 

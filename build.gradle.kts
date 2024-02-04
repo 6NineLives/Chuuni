@@ -59,7 +59,9 @@ repositories {
     maven("https://repo.xenondevs.xyz/releases")
     maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
     maven("https://repo.codemc.io/repository/maven-snapshots/")
+    maven("https://repo.codemc.io/repository/maven-releases/")
     maven("https://jitpack.io")
+    maven("https://mvn.lumine.io/repository/maven-public/")
 }
 
 dependencies {
@@ -81,17 +83,20 @@ dependencies {
 
     //Others
     compileOnly("net.kyori:adventure-text-minimessage:${Dependencies.ADVENTURE}")
+    compileOnly("net.kyori:adventure-text-serializer-plain:${Dependencies.ADVENTURE}")
     compileOnly("com.charleskorn.kaml:kaml:${Dependencies.KAML}")
     compileOnly("me.clip:placeholderapi:2.11.1")
-    compileOnly("org.roaringbitmap:RoaringBitmap:${Dependencies.ROARING_BITMAP}")
-
+    compileOnly("com.github.retrooper.packetevents:spigot:${Dependencies.PACKET_EVENTS}")
+    compileOnly("io.lumine:Mythic-Dist:${Dependencies.MYTHIC_DIST}")
+    compileOnly("net.Indyuce:MMOCore:${Dependencies.MMO_CORE}")
+//    compileOnly("org.roaringbitmap:RoaringBitmap:${Dependencies.ROARING_BITMAP}")
     implementation("xyz.xenondevs.invui:invui-core:${Dependencies.INVUI}")
     implementation("xyz.xenondevs.invui:inventory-access-r17:${Dependencies.INVUI}")
     implementation("xyz.xenondevs.invui:invui-kotlin:${Dependencies.INVUI}")
     implementation("com.github.Revxrsal.Lamp:common:${Dependencies.LAMP}")
     implementation("com.github.Revxrsal.Lamp:bukkit:${Dependencies.LAMP}")
-    implementation("com.github.megavexnetwork.scoreboard-library:scoreboard-library-implementation:${Dependencies.SCOREBOARD_LIBRARY}")
-    implementation("com.github.megavexnetwork.scoreboard-library:scoreboard-library-modern:${Dependencies.SCOREBOARD_LIBRARY}")
+//    implementation("com.github.megavexnetwork.scoreboard-library:scoreboard-library-implementation:${Dependencies.SCOREBOARD_LIBRARY}")
+//    implementation("com.github.megavexnetwork.scoreboard-library:scoreboard-library-modern:${Dependencies.SCOREBOARD_LIBRARY}")
 
     // Test
 //    testImplementation(kotlin("test"))
@@ -267,6 +272,8 @@ bukkit {
         "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:${Dependencies.KOTLIN_COROUTINES}",
         "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:${Dependencies.KOTLIN_SERIALIZE}",
         "org.jetbrains:annotations:${Dependencies.JETBRAINS_ANNOTATIONS}",
+        "net.kyori:adventure-text-minimessage:${Dependencies.ADVENTURE}",
+        "net.kyori:adventure-text-serializer-plain:${Dependencies.ADVENTURE}",
         "com.charleskorn.kaml:kaml-jvm:${Dependencies.KAML}",
         "org.flywaydb:flyway-core:${Toolchain.FLYWAY}",
         "org.jooq:jooq:${Dependencies.JOOQ}",
@@ -277,6 +284,7 @@ bukkit {
         "org.postgresql:postgresql:${Dependencies.POSTGRESQL}"
     )
     softDepend = listOf(
-        "PlaceholderAPI"
+        "PlaceholderAPI",
+        "packetevents"
     )
 }
