@@ -88,6 +88,7 @@ dependencies {
     compileOnly("me.clip:placeholderapi:2.11.1")
     compileOnly("com.github.retrooper.packetevents:spigot:${Dependencies.PACKET_EVENTS}")
     compileOnly("io.lumine:Mythic-Dist:${Dependencies.MYTHIC_DIST}")
+    compileOnly("io.lumine:MythicLib-dist:${Dependencies.MYTHIC_LIB_DIST}")
     compileOnly("net.Indyuce:MMOCore:${Dependencies.MMO_CORE}")
 //    compileOnly("org.roaringbitmap:RoaringBitmap:${Dependencies.ROARING_BITMAP}")
     implementation("xyz.xenondevs.invui:invui-core:${Dependencies.INVUI}")

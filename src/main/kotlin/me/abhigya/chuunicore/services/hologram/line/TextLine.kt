@@ -40,7 +40,7 @@ class TextLine(
                 val value = tmp.get()
                 if (firstRender) {
                     firstRender = false
-                    tmp.addObserver(pvt)
+                    (tmp as MutableState<Component>).addObserver(pvt)
                 }
                 value
             } else {

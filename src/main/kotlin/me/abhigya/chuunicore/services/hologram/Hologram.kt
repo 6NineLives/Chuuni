@@ -26,10 +26,7 @@ class Hologram(
     var location: Location = location
         private set
 
-    private val hLines: MutableList<ILine<*>> = CopyOnWriteArrayList() // writes are slow and Iterators are fast and consistent.
-
-    val lines: MutableList<ILine<*>>
-        get() = hLines
+    val lines: MutableList<ILine<*>> = CopyOnWriteArrayList() // writes are slow and Iterators are fast and consistent.
 
     val seeingPlayers: MutableSet<Player> = ConcurrentHashMap.newKeySet() // faster writes
 
@@ -47,7 +44,7 @@ class Hologram(
     }
 
     fun load(vararg lines: ILine<*>) {
-        hLines.clear()
+        this.lines.clear()
         lines.forEach { it.pvt.hologram = this }
         loader.load(this, lines)
     }
@@ -63,20 +60,28 @@ class Hologram(
 
     fun show(player: Player) {
         seeingPlayers.add(player)
-        for (line in this.hLines) {
+        for (line in lines) {
             line.show(player)
         }
 
         showEvent?.onShow(player)
     }
 
+    fun showNearby() {
+        location.world?.getNearbyPlayers(location, key.pool.options.spawnDistance)?.forEach { show(it) }
+    }
+
     fun hide(player: Player) {
-        for (line in this.hLines) {
+        for (line in lines) {
             line.hide(player)
         }
         seeingPlayers.remove(player)
 
         hideEvent?.onHide(player)
+    }
+
+    fun destroy() {
+        key.pool.remove(key)
     }
 
     override fun hashCode(): Int {

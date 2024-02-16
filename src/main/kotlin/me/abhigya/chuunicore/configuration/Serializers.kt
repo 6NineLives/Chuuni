@@ -100,12 +100,12 @@ object Pos2DSerializer : KSerializer<Pos2D> {
     override fun deserialize(decoder: Decoder): Pos2D {
         val tokenizer = StringTokenizer(decoder.decodeString(), ":")
         val x = tokenizer.nextToken().toDouble()
-        val z = tokenizer.nextToken().toDouble()
-        return Pos2D(x, z)
+        val y = tokenizer.nextToken().toDouble()
+        return Pos2D(x, y)
     }
 
     override fun serialize(encoder: Encoder, value: Pos2D) {
-        encoder.encodeString(String.format("%.2f:%.2f", value.x, value.z))
+        encoder.encodeString(String.format("%.2f:%.2f", value.x, value.y))
     }
 
 }

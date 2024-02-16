@@ -13,7 +13,7 @@ interface IHologramLoader {
 
 }
 
-class SingletonLoader : IHologramLoader {
+object SingletonLoader : IHologramLoader {
     override fun load(hologram: Hologram, lines: Array<out ILine<*>>) {
         if (lines.size > 1) {
             throw RuntimeException("Hologram '${hologram.key}' has more than 1 line.")
@@ -35,7 +35,7 @@ class SingletonLoader : IHologramLoader {
     }
 }
 
-class TextBlockStandardLoader : IHologramLoader {
+object TextBlockStandardLoader : IHologramLoader {
     override fun load(hologram: Hologram, lines: Array<out ILine<*>>) {
         val cloned = hologram.location.clone()
 
@@ -116,7 +116,7 @@ class TextBlockStandardLoader : IHologramLoader {
     }
 }
 
-class TextSequentialLoader : IHologramLoader {
+object TextSequentialLoader : IHologramLoader {
     override fun load(hologram: Hologram, lines: Array<out ILine<*>>) {
         set(hologram, lines, true)
     }

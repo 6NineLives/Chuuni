@@ -3,6 +3,7 @@ package me.abhigya.chuunicore.services.hologram
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import me.abhigya.chuunicore.ext.scheduleTickTask
 import org.bukkit.Bukkit
 import org.bukkit.event.HandlerList
@@ -53,6 +54,8 @@ class HologramPool(
         holograms[key] = value
     }
 
+    fun remove(key: String): Hologram? = remove(HologramKey(key, this))
+
     fun remove(key: HologramKey): Hologram? {
         // if removed
         val removed = holograms.remove(key)
@@ -67,34 +70,35 @@ class HologramPool(
 
     fun init(plugin: Plugin) {
         Bukkit.getPluginManager().registerEvents(listener, plugin)
-        task = coroutineScope.scheduleTickTask {
-            for (player in Bukkit.getOnlinePlayers()) {
-                for (hologram in holograms.values) {
-                    val holoLoc = hologram.location
-                    val playerLoc = player.location
-                    val isShown = hologram.isShownFor(player)
+        task = coroutineScope.launch {
+            while (true) {
+                for (player in Bukkit.getOnlinePlayers()) {
+                    for (hologram in holograms.values) {
+                        val holoLoc = hologram.location
+                        val playerLoc = player.location
+                        val isShown = hologram.isShownFor(player)
 
-                    if (holoLoc.world != playerLoc.world) {
-                        if (isShown) {
+                        if (holoLoc.world != playerLoc.world) {
+                            if (isShown) {
+                                hologram.hide(player)
+                            }
+                            continue
+                        } else if (!holoLoc.world.isChunkLoaded(holoLoc.blockX shr 4, holoLoc.blockZ shr 4) && isShown) {
                             hologram.hide(player)
+                            continue
                         }
-                        continue
-                    } else if (!holoLoc.world.isChunkLoaded(holoLoc.blockX shr 4, holoLoc.blockZ shr 4) && isShown
-                    ) {
-                        hologram.hide(player)
-                        continue
-                    }
-                    val inRange = holoLoc.distanceSquared(playerLoc) <= options.spawnDistance
+                        val inRange = holoLoc.distanceSquared(playerLoc) <= options.spawnDistance
 
-                    if (!inRange && isShown) {
-                        hologram.hide(player)
-                    } else if (inRange && !isShown) {
-                        hologram.show(player)
+                        if (!inRange && isShown) {
+                            hologram.hide(player)
+                        } else if (inRange && !isShown) {
+                            hologram.show(player)
+                        }
                     }
                 }
-            }
 
-            delay(1000)
+                delay(100)
+            }
         }
     }
 

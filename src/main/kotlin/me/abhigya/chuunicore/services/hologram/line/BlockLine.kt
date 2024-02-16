@@ -7,6 +7,7 @@ import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEn
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityVelocity
 import me.abhigya.chuunicore.ext.send
 import me.abhigya.chuunicore.model.MutableState
+import me.abhigya.chuunicore.model.mutableStateOf
 import org.bukkit.Location
 import org.bukkit.entity.EntityType
 import org.bukkit.entity.Player
@@ -19,11 +20,11 @@ class BlockLine(
     private val line: Line = Line(EntityType.DROPPED_ITEM)
     private val resetVelocity = WrapperPlayServerEntityVelocity(entityId, Vector3d.zero())
 
-    private val _mutableStateOf = item
+    private val mutableState = item
 
     private var firstRender = true
 
-    constructor(item: ItemStack) : this(MutableState(item))
+    constructor(item: ItemStack) : this(mutableStateOf(item))
 
     override val type: ILine.Type get() = ILine.Type.BLOCK_LINE
 
@@ -32,8 +33,8 @@ class BlockLine(
     override val location: Location? get() = line.location
 
     override var obj: ItemStack
-        get() = _mutableStateOf.get()
-        set(value) = _mutableStateOf.set(value)
+        get() = mutableState.get()
+        set(value) = mutableState.set(value)
 
     override var pvt = ILine.PrivateConfig(this)
 
@@ -57,7 +58,7 @@ class BlockLine(
 
         if(firstRender) {
             firstRender = false
-            _mutableStateOf.addObserver(pvt)
+            mutableState.addObserver(pvt)
         }
     }
 

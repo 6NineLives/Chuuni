@@ -1,18 +1,16 @@
 package me.abhigya.chuunicore.services.hologram.line
 
-import me.abhigya.chuunicore.services.hologram.Hologram
 import me.abhigya.chuunicore.model.Observer
-import me.abhigya.chuunicore.services.hologram.ClickEvent
-import net.kyori.adventure.text.Component
+import me.abhigya.chuunicore.services.hologram.Hologram
 import org.bukkit.Location
 import org.bukkit.entity.Player
 
 interface ILine<T> {
 
-    data class PrivateConfig(private val line: ILine<*>) : Observer {
+    data class PrivateConfig<T>(private val line: ILine<T>) : Observer<T> {
 
         lateinit var hologram: Hologram
-        override fun observerUpdate() {
+        override fun observerUpdate(oldValue: T, newValue: T) {
             line.update(hologram.seeingPlayers)
         }
     }
@@ -25,7 +23,7 @@ interface ILine<T> {
 
     var obj: T
 
-    var pvt : PrivateConfig
+    var pvt : PrivateConfig<T>
 
     fun setLocation(value: Location)
 

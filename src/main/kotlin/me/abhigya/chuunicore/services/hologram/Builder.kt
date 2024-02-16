@@ -2,6 +2,7 @@ package me.abhigya.chuunicore.services.hologram
 
 import me.abhigya.chuunicore.ChuuniCorePlugin
 import me.abhigya.chuunicore.model.MutableState
+import me.abhigya.chuunicore.model.mutableStateOf
 import me.abhigya.chuunicore.services.hologram.line.BlockLine
 import me.abhigya.chuunicore.services.hologram.line.ILine
 import me.abhigya.chuunicore.services.hologram.line.TextLine
@@ -29,7 +30,7 @@ class HologramBuilder {
 
     var key: String? = null
     var location: Location? = null
-    var loader: IHologramLoader = TextBlockStandardLoader()
+    var loader: IHologramLoader = TextBlockStandardLoader
     private val lines: MutableList<ILine<*>> = ArrayList()
 
     fun text(
@@ -59,7 +60,7 @@ class HologramBuilder {
     }
 
     fun item(item: ItemStack): BlockLine {
-        return item(MutableState(item))
+        return item(mutableStateOf(item))
     }
 
     internal fun build(pool: HologramPool): Hologram {
@@ -67,6 +68,8 @@ class HologramBuilder {
             HologramKey(requireNotNull(key) { "Key is not set!" }, pool),
             requireNotNull(location) { "Location is not set!" },
             loader
-        )
+        ).also {
+            it.load(*lines.toTypedArray())
+        }
     }
 }
