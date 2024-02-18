@@ -14,7 +14,7 @@ const val JAVA_VERSION: Int = 17
 object Dependencies {
     const val ROARING_BITMAP: String = "0.9.45"
     const val KOTLIN_COROUTINES: String = "1.8.0-RC2"
-    const val KOTLIN_SERIALIZE: String = "1.9.22"
+    const val KOTLIN_SERIALIZE: String = "1.6.2"
     const val JETBRAINS_ANNOTATIONS: String = "24.1.0"
     const val TOOTHPICK: String = "3.1.0"
     const val ADVENTURE: String = "4.15.0"
@@ -24,7 +24,8 @@ object Dependencies {
     const val KAML: String = "0.57.0"
     const val INVUI: String = "1.25"
     const val LAMP: String = "3.1.8"
-    const val PACKET_EVENTS: String = "2.2.0"
+    const val PLACEHOLDER_API: String = "2.11.1"
+    const val PACKET_EVENTS: String = "2.2.1"
     const val SCOREBOARD_LIBRARY: String = "2.0.0-RC11"
     const val MYTHIC_DIST: String = "5.5.1"
     const val MYTHIC_LIB_DIST: String = "1.4"

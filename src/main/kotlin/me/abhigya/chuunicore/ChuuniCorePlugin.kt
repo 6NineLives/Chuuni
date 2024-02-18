@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.runBlocking
+import me.abhigya.chuunicore.commands.Commands
 import me.abhigya.chuunicore.configuration.ConfigProvider
 import me.abhigya.chuunicore.configuration.Configs
 import me.abhigya.chuunicore.configuration.SimpleConfigs
@@ -83,7 +84,7 @@ class ChuuniCorePlugin : JavaPlugin(), CoroutineScope by CoroutineScope(
                     MiniMessage.builder().build()
                 }.providesSingleton().providesReleasable()
                 bind<Configs>().toClass<SimpleConfigs>().singleton()
-                bind<HologramPool>().toInstance { HologramPool(coroutineScope = this@ChuuniCorePlugin).also { it.init(this@ChuuniCorePlugin) } }
+                bind<HologramPool>().toInstance { HologramPool(this@ChuuniCorePlugin).also { it.init() } }
             }
         )
 
@@ -144,6 +145,8 @@ class ChuuniCorePlugin : JavaPlugin(), CoroutineScope by CoroutineScope(
             logger.info("Database initialized in $this ms!")
         }
 
+        scope.getInstance<Commands>().registerCommands()
+
         state = PluginState.ENABLED
     }
 }
@@ -166,4 +169,10 @@ enum class PluginState {
     ENABLED,
     STOPPING,
     DISABLED
+}
+
+fun Logger.debug(message: String) {
+    if (isRunningDevelopment) {
+        this.info("[DEBUG] $message")
+    }
 }

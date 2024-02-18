@@ -1,75 +1,95 @@
 package me.abhigya.chuunicore.services.hologram
 
 import me.abhigya.chuunicore.ChuuniCorePlugin
-import me.abhigya.chuunicore.model.MutableState
-import me.abhigya.chuunicore.model.mutableStateOf
-import me.abhigya.chuunicore.services.hologram.line.BlockLine
-import me.abhigya.chuunicore.services.hologram.line.ILine
-import me.abhigya.chuunicore.services.hologram.line.TextLine
 import net.kyori.adventure.text.Component
 import org.bukkit.Location
 import org.bukkit.inventory.ItemStack
 import toothpick.ktp.extension.getInstance
 
 fun Hologram(
+    key: String,
+    location: Location,
     pool: HologramPool = ChuuniCorePlugin.getPlugin().scope.getInstance(),
-    builder: HologramBuilder.() -> Unit
+    init: Hologram.() -> Unit
 ): Hologram {
-    val hologramBuilder = HologramBuilder()
-    hologramBuilder.builder()
-    return hologramBuilder.build(pool)
+    return pool.createHologram(key, location).apply(init)
 }
 
 fun HologramPool.create(
-    builder: HologramBuilder.() -> Unit
+    key: String,
+    location: Location,
+    init: Hologram.() -> Unit
 ): Hologram {
-    return Hologram(this, builder)
+    return createHologram(key, location).apply(init)
 }
 
-class HologramBuilder {
+fun Hologram.Page(
+    init: HologramPage.() -> Unit
+) {
+    addPage().apply(init)
+}
 
-    var key: String? = null
-    var location: Location? = null
-    var loader: IHologramLoader = TextBlockStandardLoader
-    private val lines: MutableList<ILine<*>> = ArrayList()
+fun HologramPage.Text(
+    content: Component
+): HologramLine.Text {
+    return addTextLine(content)
+}
 
-    fun text(
-        text: Component,
-        vararg args: Any
-    ): TextLine {
-        val line = TextLine(text, if (args.isEmpty()) null else args, false)
-        lines.add(line)
-        return line
-    }
+fun HologramPage.Head(
+    content: ItemStack
+): HologramLine.Head {
+    return addHeadLine(content)
+}
 
-    fun clickable(
-        text: Component,
-        vararg args: Any,
-        clickEvent: ClickEvent = ClickEvent { }
-    ): TextLine {
-        val line = TextLine(text, if (args.isEmpty()) null else args, true)
-        line.onClick(clickEvent)
-        lines.add(line)
-        return line
-    }
+fun HologramPage.SmallHead(
+    content: ItemStack
+): HologramLine.SmallHead {
+    return addSmallHeadLine(content)
+}
 
-    fun item(item: MutableState<ItemStack>): BlockLine {
-        val line = BlockLine(item)
-        lines.add(line)
-        return line
-    }
+fun HologramPage.Icon(
+    content: ItemStack
+): HologramLine.Icon {
+    return addIconLine(content)
+}
 
-    fun item(item: ItemStack): BlockLine {
-        return item(mutableStateOf(item))
-    }
+fun HologramPage.Entity(
+    content: HologramEntityType
+): HologramLine.Entity {
+    return addEntityLine(content)
+}
 
-    internal fun build(pool: HologramPool): Hologram {
-        return Hologram(
-            HologramKey(requireNotNull(key) { "Key is not set!" }, pool),
-            requireNotNull(location) { "Location is not set!" },
-            loader
-        ).also {
-            it.load(*lines.toTypedArray())
-        }
-    }
+fun HologramPage.Text(
+    index: Int,
+    content: Component
+): HologramLine.Text {
+    return insertTextLine(index, content)
+}
+
+fun HologramPage.Head(
+    index: Int,
+    content: ItemStack
+): HologramLine.Head {
+    return insertHeadLine(index, content)
+}
+
+fun HologramPage.SmallHead(
+    index: Int,
+    content: ItemStack
+): HologramLine.SmallHead {
+    return insertSmallHeadLine(index, content)
+}
+
+fun HologramPage.Icon(
+    index: Int,
+    content: ItemStack
+): HologramLine.Icon {
+    return insertIconLine(index, content)
+}
+
+fun HologramPage.Entity(
+    index: Int,
+    content: HologramEntityType
+): HologramLine.Entity {
+    return insertEntityLine(index, content)
 }

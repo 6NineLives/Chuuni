@@ -1,60 +1,60 @@
 package me.abhigya.chuunicore.services.hologram
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import me.abhigya.chuunicore.services.hologram.line.ILine
-import me.abhigya.chuunicore.services.hologram.line.TextLine
+import com.github.retrooper.packetevents.event.PacketListenerAbstract
+import com.github.retrooper.packetevents.event.PacketReceiveEvent
+import com.github.retrooper.packetevents.protocol.packettype.PacketType
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity
+import com.google.common.cache.Cache
+import com.google.common.cache.CacheBuilder
+import me.abhigya.chuunicore.model.ClickType
+import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
-import org.bukkit.event.block.Action
-import org.bukkit.event.player.PlayerInteractEvent
-import org.bukkit.event.player.PlayerQuitEvent
-import org.bukkit.event.player.PlayerRespawnEvent
+import org.bukkit.event.player.PlayerMoveEvent
+import java.util.*
+import java.util.concurrent.TimeUnit
 
 class HologramListener(
-    private val pool: HologramPool,
-    private val coroutineScope: CoroutineScope
-) : Listener {
+    private val pool: HologramPool
+) : PacketListenerAbstract(), Listener {
 
-    @EventHandler
-    fun PlayerRespawnEvent.handlePlayerRespawn() {
-        pool.holograms.values.asSequence()
-            .filter { it.isShownFor(player) }
-            .forEach { it.hide(player) }
-    }
+    private val cooldown: Cache<UUID, Int> = CacheBuilder.newBuilder().expireAfterWrite(20, TimeUnit.MILLISECONDS).build();
 
-    @EventHandler
-    fun PlayerQuitEvent.handlePlayerQuit() {
-        pool.holograms.values.asSequence()
-            .filter { it.isShownFor(player) }
-            .forEach { it.seeingPlayers.remove(player) }
-    }
+    override fun onPacketReceive(event: PacketReceiveEvent) {
+        if (event.packetType != PacketType.Play.Client.INTERACT_ENTITY) return
+        val player = event.player as Player
 
-    @EventHandler
-    fun PlayerInteractEvent.handlePlayerInteract() {
-        coroutineScope.launch {
-            if (action != Action.LEFT_CLICK_AIR) return@launch
+        val packet = WrapperPlayClientInteractEntity(event)
+        if (cooldown.asMap().getOrDefault(player.uniqueId, -1) == packet.entityId) return
 
-            FST@ for (hologram in pool.holograms.values) {
-                if (!hologram.isShownFor(player)) continue
+        for (hologram in pool.holograms.values) {
+            if (!hologram.isClickRegistered) continue
+            if (hologram.location.world != player.world) continue
 
-                for (line in hologram.lines) {
-                    if (line.type != ILine.Type.TEXT_LINE) continue
+            val page = hologram.hologramPages[hologram.viewerPages.getOrDefault(player.uniqueId, 0)]
+            val line = page.lines.firstOrNull { packet.entityId in it.entityIds } ?: continue
 
-                    val tL = line as TextLine
-                    if (!tL.clickable) continue
-                    if (tL.hitbox == null) continue
-
-                    val result = tL.hitbox!!.rayTrace(player.eyeLocation.toVector(), player.location.direction, pool.options.maxHitDistance.toDouble())
-                    if (player.eyeLocation.toVector().subtract(result!!.hitPosition).length() > pool.options.minHitDistance) {
-                        continue
-                    }
-
-                    tL.click(player)
-                    break@FST
-                }
-            }
+            val clickType = packet.action.clickType(player)
+            hologram.clickActions.forEach { it.onClick(player, clickType) }
+            page.clickActions.forEach { it.onClick(player, clickType) }
+            line.clickActions.forEach { it.onClick(player, clickType) }
+            cooldown.put(player.uniqueId, packet.entityId)
+            return
         }
     }
 
+    private fun WrapperPlayClientInteractEntity.InteractAction.clickType(player: Player): ClickType {
+        return if (this == WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
+            if (player.isSneaking) ClickType.SHIFT_LEFT_CLICK else ClickType.LEFT_CLICK
+        } else {
+            if (player.isSneaking) ClickType.SHIFT_RIGHT_CLICK else ClickType.RIGHT_CLICK
+        }
+    }
+
+    @EventHandler
+    fun PlayerMoveEvent.handlePlayerMove() {
+        for (hologram in pool.holograms.values) {
+            hologram.tracker.onMove(this)
+        }
+    }
 }

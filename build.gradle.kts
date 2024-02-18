@@ -85,7 +85,7 @@ dependencies {
     compileOnly("net.kyori:adventure-text-minimessage:${Dependencies.ADVENTURE}")
     compileOnly("net.kyori:adventure-text-serializer-plain:${Dependencies.ADVENTURE}")
     compileOnly("com.charleskorn.kaml:kaml:${Dependencies.KAML}")
-    compileOnly("me.clip:placeholderapi:2.11.1")
+    compileOnly("me.clip:placeholderapi:${Dependencies.PLACEHOLDER_API}")
     compileOnly("com.github.retrooper.packetevents:spigot:${Dependencies.PACKET_EVENTS}")
     compileOnly("io.lumine:Mythic-Dist:${Dependencies.MYTHIC_DIST}")
     compileOnly("io.lumine:MythicLib-dist:${Dependencies.MYTHIC_LIB_DIST}")
@@ -240,14 +240,16 @@ tasks {
     task<LaunchMinecraftServerTask>("runServer") {
         dependsOn(build)
 
+        val serverDir = rootDir.resolve("runServer")
+
         doFirst {
             copy {
                 from(buildDir.resolve("libs/${project.name}.jar"))
-                into(buildDir.resolve("MinecraftServer/plugins"))
+                into(serverDir.resolve("plugins"))
             }
         }
 
-        serverDirectory.set("runServer")
+        serverDirectory.set(serverDir.absolutePath)
         jvmArgument.add("-Denvironment=development")
         jvmArgument.add("-Dkotlinx.coroutines.debug=on")
         jarUrl.set(LaunchMinecraftServerTask.JarUrl.Paper("1.20.2"))

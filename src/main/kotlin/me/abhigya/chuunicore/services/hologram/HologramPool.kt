@@ -1,99 +1,57 @@
 package me.abhigya.chuunicore.services.hologram
 
-import kotlinx.coroutines.CoroutineScope
+import com.github.retrooper.packetevents.PacketEvents
+import com.github.retrooper.packetevents.protocol.entity.data.EntityData
+import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes
+import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes
+import com.github.retrooper.packetevents.protocol.player.Equipment
+import com.github.retrooper.packetevents.protocol.player.EquipmentSlot
+import com.github.retrooper.packetevents.util.Vector3d
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerAttachEntity
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerDestroyEntities
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityEquipment
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityTeleport
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSpawnEntity
+import io.github.retrooper.packetevents.util.SpigotConversionUtil
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import me.abhigya.chuunicore.ext.scheduleTickTask
-import org.bukkit.Bukkit
+import me.abhigya.chuunicore.ChuuniCorePlugin
+import me.abhigya.chuunicore.ext.send
+import net.kyori.adventure.text.Component
+import org.bukkit.Location
+import org.bukkit.entity.Player
 import org.bukkit.event.HandlerList
-import org.bukkit.plugin.Plugin
+import org.bukkit.inventory.ItemStack
+import toothpick.InjectConstructor
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.ArrayList
+import kotlin.experimental.or
 
-data class HologramPoolOptions(
-    val spawnDistance: Double = 60.0,
-    val minHitDistance: Float = 0.5F,
-    val maxHitDistance: Float = 5F,
-)
-
-class KeyAlreadyExistsException(key: HologramKey) : IllegalStateException("Key '$key' already exists")
-
-class NoValueForKeyException(key: String) : IllegalStateException("No value for key '$key'")
-
+@InjectConstructor
 class HologramPool(
-    val options: HologramPoolOptions = HologramPoolOptions(),
-    private val coroutineScope: CoroutineScope
+    internal val plugin: ChuuniCorePlugin
 ) {
 
-    internal val holograms: MutableMap<HologramKey, Hologram> = ConcurrentHashMap()
-    private val listener: HologramListener = HologramListener(this, coroutineScope)
+    val holograms: MutableMap<String, Hologram> = ConcurrentHashMap()
+    private val listener: HologramListener = HologramListener(this)
     private var task: Job? = null
 
-    init {
-        require(options.minHitDistance >= 0) { "minHitDistance must be positive" }
-        require(options.maxHitDistance <= 120) { "maxHitDistance cannot be greater than 120" }
-    }
+    fun init() {
+        plugin.server.pluginManager.registerEvents(listener, plugin);
+        PacketEvents.getAPI().eventManager.registerListeners(listener)
 
-    fun get(key: HologramKey): Hologram {
-        return holograms[key] ?: throw NoValueForKeyException(key.id)
-    }
-
-    fun get(keyId: String) : Hologram {
-        for((key, holo) in holograms) {
-            if(key.id == keyId) {
-                return holo
-            }
-        }
-        throw NoValueForKeyException(keyId)
-    }
-
-    fun takeCareOf(key: HologramKey, value: Hologram) {
-        if (holograms.containsKey(key)) {
-            throw KeyAlreadyExistsException(key)
-        }
-        holograms[key] = value
-    }
-
-    fun remove(key: String): Hologram? = remove(HologramKey(key, this))
-
-    fun remove(key: HologramKey): Hologram? {
-        // if removed
-        val removed = holograms.remove(key)
-        removed?.let {
-            for (player in it.seeingPlayers) {
-                it.hide(player)
-            }
-            return it
-        }
-        return null
-    }
-
-    fun init(plugin: Plugin) {
-        Bukkit.getPluginManager().registerEvents(listener, plugin)
-        task = coroutineScope.launch {
+        task = plugin.launch {
             while (true) {
-                for (player in Bukkit.getOnlinePlayers()) {
-                    for (hologram in holograms.values) {
-                        val holoLoc = hologram.location
-                        val playerLoc = player.location
-                        val isShown = hologram.isShownFor(player)
-
-                        if (holoLoc.world != playerLoc.world) {
-                            if (isShown) {
-                                hologram.hide(player)
-                            }
-                            continue
-                        } else if (!holoLoc.world.isChunkLoaded(holoLoc.blockX shr 4, holoLoc.blockZ shr 4) && isShown) {
-                            hologram.hide(player)
-                            continue
-                        }
-                        val inRange = holoLoc.distanceSquared(playerLoc) <= options.spawnDistance
-
-                        if (!inRange && isShown) {
-                            hologram.hide(player)
-                        } else if (inRange && !isShown) {
-                            hologram.show(player)
-                        }
+                for (value in holograms.values) {
+                    if (!value.isUpdateRegistered) continue
+                    if (System.currentTimeMillis() - value.lastUpdate < value.updateInterval.inWholeMilliseconds) continue
+                    if (value.hasChangedContentType) {
+                        updateHologram(value)
+                    } else {
+                        updateContent(value)
                     }
                 }
 
@@ -102,15 +60,195 @@ class HologramPool(
         }
     }
 
-    fun cleanUp() {
-        HandlerList.unregisterAll(listener)
-        task?.cancel()
-        for (hologram in holograms.values) {
-            for (player in hologram.seeingPlayers) {
-                hologram.hide(player)
+    internal fun spawnHologram(hologram: Hologram, player: Player) {
+        if (!hologram.isVisible(player)) return
+        val page = hologram.getCurrentPage(player) ?: return
+        val map = mapLocations(page)
+
+        for ((line, location) in map) {
+            val peLocation = SpigotConversionUtil.fromBukkitLocation(location)
+            WrapperPlayServerSpawnEntity(
+                line.entityIds[0],
+                UUID.randomUUID(),
+                EntityTypes.ARMOR_STAND,
+                peLocation,
+                location.yaw,
+                0,
+                Vector3d.zero()
+            ).send(player)
+
+            WrapperPlayServerEntityMetadata(
+                line.entityIds[0],
+                buildList {
+                    add(EntityData(0, EntityDataTypes.BYTE, 0x20.toByte()))
+
+                    var b = 0x08.toByte()
+                    if (line !is HologramLine.Head) b = b or 0x01.toByte()
+                    b = b or 0x10.toByte()
+
+                    add(EntityData(10, EntityDataTypes.BYTE, b))
+                }
+            ).send(player)
+
+            when (line) {
+                is HologramLine.Text -> {
+                    WrapperPlayServerEntityMetadata(
+                        line.entityIds[0],
+                        listOf(
+                            EntityData(2, EntityDataTypes.OPTIONAL_ADV_COMPONENT, Optional.of(line.content)),
+                            EntityData(3, EntityDataTypes.BOOLEAN, true)
+                        )
+                    ).send(player)
+                }
+                is HologramLine.Head, is HologramLine.SmallHead -> {
+                    WrapperPlayServerEntityEquipment(
+                        line.entityIds[0],
+                        listOf(
+                            Equipment(EquipmentSlot.HELMET, SpigotConversionUtil.fromBukkitItemStack(line.content as ItemStack))
+                        )
+                    ).send(player)
+                }
+                is HologramLine.Icon -> {
+                    WrapperPlayServerSpawnEntity(
+                        line.entityIds[1],
+                        UUID.randomUUID(),
+                        EntityTypes.ITEM,
+                        peLocation,
+                        0f,
+                        0,
+                        Vector3d.zero()
+                    ).send(player)
+
+                    WrapperPlayServerAttachEntity(
+                        line.entityIds[1],
+                        line.entityIds[0],
+                        false
+                    ).send(player)
+                }
+                is HologramLine.Entity -> {
+                    WrapperPlayServerSpawnEntity(
+                        line.entityIds[1],
+                        UUID.randomUUID(),
+                        line.content.type,
+                        peLocation,
+                        0f,
+                        0,
+                        Vector3d.zero()
+                    ).send(player)
+
+                    if (line.content.isBaby) {
+                        WrapperPlayServerEntityMetadata(
+                            line.entityIds[1],
+                            listOf(
+                                EntityData(16, EntityDataTypes.BOOLEAN, true)
+                            )
+                        ).send(player)
+                    }
+                }
             }
         }
+    }
+
+    fun createHologram(key: String, location: Location): Hologram {
+        val hologram = Hologram(key, this, location)
+        holograms[key] = hologram
+        return hologram
+    }
+
+    internal fun updateHologram(hologram: Hologram) {
+        for (uuid in hologram.viewerPages.keys) {
+            val player = plugin.server.getPlayer(uuid) ?: continue
+            updateContent(hologram, player)
+            updateLocation(hologram, player)
+            hologram.lastUpdate = System.currentTimeMillis()
+        }
+        hologram.hasChangedContentType = false
+    }
+
+    internal fun despawnHologran(hologram: Hologram, player: Player) {
+        val page = hologram.getCurrentPage(player) ?: return
+        for (line in page.lines) {
+            WrapperPlayServerDestroyEntities(
+                *line.entityIds.toIntArray()
+            ).send(player)
+        }
+    }
+
+    internal fun respawnHologram(hologram: Hologram) {
+        for (uuid in hologram.viewerPages.keys) {
+            val player = plugin.server.getPlayer(uuid) ?: continue
+            respawnHologram(hologram, player)
+        }
+        hologram.hasChangedContentType = false
+    }
+
+    internal fun respawnHologram(hologram: Hologram, player: Player) {
+        despawnHologran(hologram, player)
+        spawnHologram(hologram, player)
+    }
+
+    internal fun updateContent(hologram: Hologram) {
+        for (uuid in hologram.viewerPages.keys) {
+            val player = plugin.server.getPlayer(uuid) ?: continue
+            updateContent(hologram, player)
+        }
+    }
+
+    internal fun updateContent(hologram: Hologram, player: Player) {
+        if (!hologram.isVisible(player)) return
+        val page = hologram.hologramPages[hologram.viewerPages[player.uniqueId] ?: return]
+        for (line in page.lines) {
+            if (line.content is Component) {
+                WrapperPlayServerEntityMetadata(
+                    line.entityIds[0],
+                    listOf(
+                        EntityData(2, EntityDataTypes.OPTIONAL_ADV_COMPONENT, Optional.of(line.content as Component)),
+                        EntityData(3, EntityDataTypes.BOOLEAN, true)
+                    )
+                ).send(player)
+            }
+        }
+    }
+
+    internal fun updateLocation(hologram: Hologram) {
+        for (uuid in hologram.viewerPages.keys) {
+            val player = plugin.server.getPlayer(uuid) ?: continue
+            updateLocation(hologram, player)
+        }
+    }
+
+    internal fun updateLocation(hologram: Hologram, player: Player) {
+        val page = hologram.hologramPages[hologram.viewerPages[player.uniqueId] ?: return]
+        val map = this.mapLocations(page)
+        for ((line, location) in map) {
+            for (entityId in line.entityIds) {
+                WrapperPlayServerEntityTeleport(
+                    entityId,
+                    SpigotConversionUtil.fromBukkitLocation(location),
+                    true
+                ).send(player)
+            }
+        }
+    }
+
+    private fun mapLocations(page: HologramPage): List<Pair<HologramLine<*>, Location>> {
+        val returnMap: MutableList<Pair<HologramLine<*>, Location>> = ArrayList()
+        var l = page.parent.location
+        val usedLines = if (page.parent.isInverted) page.lines.reversed() else page.lines
+        for (line in usedLines) {
+            returnMap.add(line to l)
+            l = l.add(0.0, (line.height + page.lineGap).toDouble(), 0.0).clone()
+        }
+        return returnMap
+    }
+
+    fun dispose() {
+        holograms.values.forEach { it.destroy() }
         holograms.clear()
+        task?.cancel()
+        task = null
+        PacketEvents.getAPI().eventManager.unregisterListeners(listener)
+        HandlerList.unregisterAll(listener)
     }
 
 }

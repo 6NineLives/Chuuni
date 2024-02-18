@@ -9,9 +9,8 @@ import me.abhigya.chuunicore.model.MutableState
 import me.abhigya.chuunicore.model.mutableStateOf
 import me.abhigya.chuunicore.services.hologram.Hologram
 import me.abhigya.chuunicore.services.hologram.HologramPool
-import me.abhigya.chuunicore.services.hologram.IHologramLoader
-import me.abhigya.chuunicore.services.hologram.TextBlockStandardLoader
-import me.abhigya.chuunicore.services.hologram.line.TextLine
+import me.abhigya.chuunicore.services.hologram.Page
+import me.abhigya.chuunicore.services.hologram.Text
 import net.kyori.adventure.text.Component
 import org.bukkit.entity.Entity
 import toothpick.ktp.extension.getInstance
@@ -23,8 +22,7 @@ class SpeechBubble(
     val pool: HologramPool = ChuuniCorePlugin.getPlugin().scope.getInstance(),
     val duration: Duration = 2.seconds,
     val updateDelay: Duration = 100.milliseconds,
-    val offsetY: Float = 0.4F,
-    val hologramLoader: IHologramLoader = TextBlockStandardLoader
+    val offsetY: Float = 0.4F
 ) {
 
     companion object {
@@ -36,21 +34,19 @@ class SpeechBubble(
     suspend fun bubble(entity: Entity, message: MutableState<Component>): Bubble = coroutineScope {
         val location = { entity.location.add(0.0, entity.height + offsetY, 0.0) }
         val key = "${entity.entityId}-speech-bubble"
-        pool.remove(key)
+        pool.holograms[key]?.destroy()
 
-        val hologram = Hologram(pool) {
-            this.location = location()
-            this.key = key
-            this.loader = hologramLoader
-
-            text(message.get())
+        val hologram = Hologram(key, location(), pool) {
+            Page {
+                Text(message.get())
+            }
         }
         hologram.showNearby()
+        hologram.changeViewerPage(0)
 
         message.addObserver { _, new ->
-            if (hologram.seeingPlayers.isNotEmpty()) {
-                hologram.load(TextLine(new, null, false))
-            }
+            hologram.hologramPages[0].clearLines()
+            hologram.hologramPages[0].addTextLine(new)
         }
 
         val job = launch {
@@ -73,21 +69,19 @@ class SpeechBubble(
 
     suspend fun bubbleNoFollow(entity: Entity, message: MutableState<Component>): Bubble = coroutineScope {
         val key = "${entity.entityId}-speech-bubble"
-        pool.remove(key)
+        pool.holograms[key]?.destroy()
 
-        val hologram = Hologram(pool) {
-            this.location = entity.location.add(0.0, entity.height + offsetY, 0.0)
-            this.key = key
-            this.loader = hologramLoader
-
-            text(message.get())
+        val hologram = Hologram(key, entity.location.add(0.0, entity.height + offsetY, 0.0), pool) {
+            Page {
+                Text(message.get())
+            }
         }
         hologram.showNearby()
+        hologram.changeViewerPage(0)
 
         message.addObserver { _, new ->
-            if (hologram.seeingPlayers.isNotEmpty()) {
-                hologram.load(TextLine(new, null, false))
-            }
+            hologram.hologramPages[0].clearLines()
+            hologram.hologramPages[0].addTextLine(new)
         }
 
         val job = launch {
@@ -109,9 +103,7 @@ class SpeechBubble(
 
         fun destroy() {
             task.cancel()
-            if (hologram.seeingPlayers.isNotEmpty()) {
-                hologram.destroy()
-            }
+            hologram.destroy()
         }
 
     }
