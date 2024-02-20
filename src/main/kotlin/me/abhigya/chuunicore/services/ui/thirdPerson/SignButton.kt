@@ -21,8 +21,8 @@ class SignButton(
     val color: MutableState<DyeColor> = mutableStateOf(DyeColor.BLACK),
     val isGlowing: MutableState<Boolean> = mutableStateOf(false),
     relativeLocation: Pos2D,
-    elementDistanceMultiplier: Double = 0.52,
-    onClick: suspend () -> Unit
+    elementDistanceMultiplier: Double = 5.0,
+    onClick: () -> Unit
 ) : AbstractTPUIButton(ui, relativeLocation, elementDistanceMultiplier, onClick) {
 
     override var isRendered: Boolean = false
@@ -31,15 +31,13 @@ class SignButton(
         val loc = location.toBlockPos().let { Vector3i(it.x, it.y, it.z) }
         val blockState = StateTypes.OAK_WALL_SIGN.createBlockState()
         val blockChange = WrapperPlayServerBlockChange(loc, blockState.globalId)
-        val metaData = WrapperPlayServerBlockEntityData(loc, TileEntityType.SIGN, getSignData())
-//        blockState.face = Face.WALL
-//        blockState.facing = BlockFace.getBlockFaceByValue(host.facing.oppositeFace.ordinal)
+        val metaData = WrapperPlayServerBlockEntityData(loc, 7, getSignData())
         blockChange.send(host)
         metaData.send(host)
 
-        text.addObserver { _, _ -> WrapperPlayServerBlockEntityData(loc, TileEntityType.SIGN, getSignData()).send(host) }
-        color.addObserver { _, _ -> WrapperPlayServerBlockEntityData(loc, TileEntityType.SIGN, getSignData()).send(host) }
-        isGlowing.addObserver { _, _ -> WrapperPlayServerBlockEntityData(loc, TileEntityType.SIGN, getSignData()).send(host) }
+        text.addObserver { _, _ -> WrapperPlayServerBlockEntityData(loc, 7, getSignData()).send(host) }
+        color.addObserver { _, _ -> WrapperPlayServerBlockEntityData(loc, 7, getSignData()).send(host) }
+        isGlowing.addObserver { _, _ -> WrapperPlayServerBlockEntityData(loc, 7, getSignData()).send(host) }
 
         isRendered = true
     }
@@ -59,6 +57,7 @@ class SignButton(
                 addTag(NBTString(AdventureSerializer.toJson(text.getOrElse(it) { Component.empty() })))
             }
         })
+
         frontText.setTag("color", NBTString(color.get().name))
         frontText.setTag("has_glowing_text", NBTByte(if (isGlowing.get()) 1 else 0))
         nbt.setTag("front_text", frontText)

@@ -24,6 +24,6 @@ interface UIElement {
 
 interface UIButton : UIElement {
 
-    var onClick: suspend () -> Unit
+    var onClick: () -> Unit
 
 }

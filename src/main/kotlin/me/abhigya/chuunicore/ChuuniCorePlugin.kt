@@ -9,6 +9,7 @@ import me.abhigya.chuunicore.configuration.ConfigProvider
 import me.abhigya.chuunicore.configuration.Configs
 import me.abhigya.chuunicore.configuration.SimpleConfigs
 import me.abhigya.chuunicore.database.Database
+import me.abhigya.chuunicore.database.DatabaseSettingsValidator
 import me.abhigya.chuunicore.database.FlywayMigration
 import me.abhigya.chuunicore.database.Vendor
 import me.abhigya.chuunicore.database.sql.SQLDatabase
@@ -17,7 +18,6 @@ import me.abhigya.chuunicore.database.sql.mariadb.MariaDB
 import me.abhigya.chuunicore.database.sql.mariadb.MySQL
 import me.abhigya.chuunicore.database.sql.postgresql.PostGreSQL
 import me.abhigya.chuunicore.ext.BukkitCoroutineDispatcher
-import me.abhigya.chuunicore.database.DatabaseSettingsValidator
 import me.abhigya.chuunicore.services.hologram.HologramPool
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.bukkit.plugin.Plugin

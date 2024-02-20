@@ -25,7 +25,7 @@ class JooqContext(private val dialect: SQLDialect) {
     companion object {
         val MATCH_ALL_EXCEPT_INFORMATION_SCHEMA = Regex("^(?!INFORMATION_SCHEMA)(.*?)$")
         val MATCH_ALL = Regex("^(.*?)\$")
-        const val REPLACEMENT = "glide_$0"
+        const val REPLACEMENT = "chuuni_$0"
     }
 
     fun createContext(connection: Connection): DSLContext {

@@ -1,9 +1,14 @@
 package me.abhigya.chuunicore.services.ui.thirdPerson
 
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityHeadLook
+import me.abhigya.chuunicore.ext.send
 import me.abhigya.chuunicore.model.MutableState
+import me.abhigya.chuunicore.model.Observer
 import me.abhigya.chuunicore.model.geometry.Pos2D
 import me.abhigya.chuunicore.model.geometry.toLocation
+import me.abhigya.chuunicore.services.hologram.Head
 import me.abhigya.chuunicore.services.hologram.Hologram
+import me.abhigya.chuunicore.services.hologram.Page
 import org.bukkit.inventory.ItemStack
 import java.util.*
 
@@ -11,25 +16,36 @@ class ItemButton(
     ui: ThirdPersonUI,
     val item: MutableState<ItemStack>,
     relativeLocation: Pos2D,
-    elementDistanceMultiplier: Double = 0.52,
-    onClick: suspend () -> Unit
+    elementDistanceMultiplier: Double = 3.52,
+    onClick: () -> Unit
 ) : AbstractTPUIButton(ui, relativeLocation, elementDistanceMultiplier, onClick) {
+
+    private val iconObserver: Observer<ItemStack> = Observer { _, new ->
+        val h = hologram ?: return@Observer
+        h.hologramPages[0].clearLines()
+        h.hologramPages[0].addHeadLine(new)
+    }
     override val isRendered: Boolean get() = hologram != null
     private var hologram: Hologram? = null
 
     override suspend fun render() {
-        hologram = Hologram {
-            key = UUID.randomUUID().toString()
-            location = this@ItemButton.location.toLocation(world)
-
-            item(this@ItemButton.item)
+        hologram = Hologram(UUID.randomUUID().toString(), location.toLocation(world)) {
+            Page {
+                Head(item.get())
+            }
+        }.also {
+            it.show(host)
+            it.changeViewerPage(host, 0)
+            it.isClickRegistered = false
+            WrapperPlayServerEntityHeadLook(it.hologramPages[0].lines[0].entityIds[0], ui.direction.opposite.yaw).send(host)
         }
 
-        hologram?.show(host)
+        item.addObserver(iconObserver)
     }
 
     override suspend fun remove() {
         hologram?.hide(host)
         hologram = null
+        item.removeObserver(iconObserver)
     }
 }
