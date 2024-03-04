@@ -62,6 +62,7 @@ repositories {
     maven("https://repo.codemc.io/repository/maven-releases/")
     maven("https://jitpack.io")
     maven("https://mvn.lumine.io/repository/maven-public/")
+    maven("https://maven.citizensnpcs.co/repo")
 }
 
 dependencies {
@@ -90,6 +91,9 @@ dependencies {
     compileOnly("io.lumine:Mythic-Dist:${Dependencies.MYTHIC_DIST}")
     compileOnly("io.lumine:MythicLib-dist:${Dependencies.MYTHIC_LIB_DIST}")
     compileOnly("net.Indyuce:MMOCore:${Dependencies.MMO_CORE}")
+    compileOnly("net.citizensnpcs:citizens-main:${Dependencies.CITIZENS}") {
+        exclude(group = "*", module = "*")
+    }
 //    compileOnly("org.roaringbitmap:RoaringBitmap:${Dependencies.ROARING_BITMAP}")
     implementation("xyz.xenondevs.invui:invui-core:${Dependencies.INVUI}")
     implementation("xyz.xenondevs.invui:inventory-access-r17:${Dependencies.INVUI}")

@@ -30,6 +30,7 @@ object Dependencies {
     const val MYTHIC_DIST: String = "5.5.1"
     const val MYTHIC_LIB_DIST: String = "1.4"
     const val MMO_CORE: String = "1.9.3"
+    const val CITIZENS: String = "2.0.33-SNAPSHOT"
     const val JOOQ: String = "3.18.4"
     const val HIKARI: String = "5.0.0"
     const val HSQLDB: String = "2.7.2"
