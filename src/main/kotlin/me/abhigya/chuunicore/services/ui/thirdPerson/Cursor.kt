@@ -8,7 +8,6 @@ import me.abhigya.chuunicore.model.geometry.*
 import me.abhigya.chuunicore.model.mutableStateOf
 import me.abhigya.chuunicore.services.hologram.Head
 import me.abhigya.chuunicore.services.hologram.Hologram
-import me.abhigya.chuunicore.services.hologram.HologramLine
 import me.abhigya.chuunicore.services.hologram.Page
 import org.bukkit.inventory.ItemStack
 import org.bukkit.util.Vector

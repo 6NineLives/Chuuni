@@ -5,6 +5,8 @@ import me.abhigya.chuunicore.ext.send
 import me.abhigya.chuunicore.model.MutableState
 import me.abhigya.chuunicore.model.Observer
 import me.abhigya.chuunicore.model.geometry.Pos2D
+import me.abhigya.chuunicore.model.geometry.Pos3D
+import me.abhigya.chuunicore.model.geometry.plus
 import me.abhigya.chuunicore.model.geometry.toLocation
 import me.abhigya.chuunicore.services.hologram.Head
 import me.abhigya.chuunicore.services.hologram.Hologram
@@ -29,6 +31,7 @@ class ItemButton(
     private var hologram: Hologram? = null
 
     override suspend fun render() {
+        _location.set(location + Pos3D(0.0, 2.0, 0.0))
         hologram = Hologram(UUID.randomUUID().toString(), location.toLocation(world)) {
             Page {
                 Head(item.get())

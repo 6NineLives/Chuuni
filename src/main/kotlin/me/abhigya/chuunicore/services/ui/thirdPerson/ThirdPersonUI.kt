@@ -182,7 +182,7 @@ abstract class AbstractTPUIButton(
     override var onClick: () -> Unit = {}
 ) : TPUIButton {
 
-    private val _location: MutableState<Pos3D>
+    protected val _location: MutableState<Pos3D>
     override val location: Pos3D get() = _location.get()
 
     final override val host: Player get() = ui.host
