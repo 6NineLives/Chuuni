@@ -1,12 +1,26 @@
 package me.abhigya.chuunicore.configuration
 
+import io.lumine.mythic.api.MythicProvider
+import io.lumine.mythic.api.skills.Skill
+import io.lumine.mythic.api.skills.SkillManager
+import it.unimi.dsi.fastutil.objects.Object2IntArrayMap
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.*
-import kotlinx.serialization.encoding.*
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import me.abhigya.chuunicore.model.geometry.BlockPos
 import me.abhigya.chuunicore.model.geometry.Pos2D
 import me.abhigya.chuunicore.model.geometry.Pos3D
+import me.abhigya.chuunicore.model.guardian.rpg.Attribute
+import me.abhigya.chuunicore.model.guardian.rpg.AttributeType
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.minimessage.MiniMessage
+import toothpick.ktp.delegate.inject
 import java.time.ZoneId
 import java.util.*
 import kotlin.time.Duration
@@ -57,6 +71,8 @@ object HumanReadableDurationSerializer : KSerializer<Duration> {
     }
 
 }
+
+typealias HumanReadableDuration = @Serializable(with = HumanReadableDurationSerializer::class) Duration
 
 object ZoneIdSerializer : KSerializer<ZoneId> {
 
@@ -129,5 +145,58 @@ object BlockPosSerializer : KSerializer<BlockPos> {
 
 }
 
+object ComponentSerializer : KSerializer<Component> {
 
-typealias HumanReadableDuration = @Serializable(with = HumanReadableDurationSerializer::class) Duration
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(Component::class.qualifiedName!!, PrimitiveKind.STRING)
+
+    internal val miniMessage: MiniMessage by inject()
+
+    override fun deserialize(decoder: Decoder): Component {
+        return miniMessage.deserialize(decoder.decodeString())
+    }
+
+    override fun serialize(encoder: Encoder, value: Component) {
+        encoder.encodeString(miniMessage.serialize(value))
+    }
+
+}
+
+typealias SerializableComponent = @Serializable(with = ComponentSerializer::class) Component
+
+object AttributeSerializer : KSerializer<Attribute> {
+
+    private val inner: KSerializer<Map<String, Int>> = MapSerializer(String.serializer(), Int.serializer())
+
+    override val descriptor: SerialDescriptor = inner.descriptor
+
+    override fun deserialize(decoder: Decoder): Attribute {
+        val map = Object2IntArrayMap<AttributeType>()
+        inner.deserialize(decoder).forEach { (s, i) ->
+            map[AttributeType.valueOf(s)] = i
+        }
+        return map
+    }
+
+    override fun serialize(encoder: Encoder, value: Attribute) {
+        inner.serialize(encoder, value.mapKeys { it.key.name.lowercase() })
+    }
+
+}
+
+object SkillSerializer : KSerializer<Skill> {
+
+    private val skillManager: SkillManager = MythicProvider.get().skillManager
+
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(Skill::class.qualifiedName!!, PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): Skill {
+        return skillManager.getSkill(decoder.decodeString()).orElseThrow()
+    }
+
+    override fun serialize(encoder: Encoder, value: Skill) {
+        return encoder.encodeString(value.internalName)
+    }
+
+}
+
+typealias SerializableSkill = @Serializable(SkillSerializer::class) Skill

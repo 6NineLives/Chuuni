@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.runBlocking
 import me.abhigya.chuunicore.commands.Commands
+import me.abhigya.chuunicore.configuration.ComponentSerializer
 import me.abhigya.chuunicore.configuration.ConfigProvider
 import me.abhigya.chuunicore.configuration.Configs
 import me.abhigya.chuunicore.configuration.SimpleConfigs
@@ -89,6 +90,7 @@ class ChuuniCorePlugin : JavaPlugin(), CoroutineScope by CoroutineScope(
         )
 
         scope.inject(BukkitCoroutineDispatcher)
+        scope.inject(ComponentSerializer)
 
         // Configuration
         logger.info("Loading configuration...")
