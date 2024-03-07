@@ -23,7 +23,10 @@ class HologramPage(
     var lineGap: Int = 0
 
     fun clearLines() {
-        _lines.clear()
+        pool.respawnHologram(parent) {
+            parent.hasChangedContentType = true
+            _lines.clear()
+        }
     }
 
     fun addTextLine(content: Component): HologramLine.Text = addLine(HologramLine.Text(pool, this, content))
@@ -37,24 +40,24 @@ class HologramPage(
     fun addEntityLine(content: HologramEntityType): HologramLine.Entity = addLine(HologramLine.Entity(pool, this, content))
 
     private fun <C, T : HologramLine<C>> addLine(line: T): T {
-        _lines.add(line)
-        parent.hasChangedContentType = true
-        pool.respawnHologram(parent)
+        pool.respawnHologram(parent) {
+            parent.hasChangedContentType = true
+            _lines.add(line)
+        }
         return line
     }
 
     fun removeLine(index: Int) {
-        _lines.removeAt(index)
-        for (uuid in parent.viewerPages.keys) {
-            val player = Bukkit.getPlayer(uuid) ?: continue
-            pool.respawnHologram(parent, player)
+        pool.respawnHologram(parent) {
+            _lines.removeAt(index)
         }
     }
 
     private fun <C, T : HologramLine<C>> insertLine(index: Int, line: T): T {
-        _lines.add(index, line)
-        parent.hasChangedContentType = true
-        pool.respawnHologram(parent)
+        pool.respawnHologram(parent) {
+            parent.hasChangedContentType = true
+            _lines.add(index, line)
+        }
         return line
     }
 

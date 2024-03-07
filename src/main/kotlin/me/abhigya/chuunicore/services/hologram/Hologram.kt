@@ -61,10 +61,12 @@ class Hologram(
     fun changeViewerPage(viewer: Player, page: Int) {
         if (!this.isVisible(viewer)) return
         val currentPage: HologramPage? = this.getCurrentPage(viewer)
-        _viewerPages[viewer.uniqueId] = page
         if (currentPage != null) {
-            pool.respawnHologram(this, viewer)
+            pool.respawnHologram(this, viewer) {
+                _viewerPages[viewer.uniqueId] = page
+            }
         } else {
+            _viewerPages[viewer.uniqueId] = page
             pool.spawnHologram(this, viewer)
         }
     }

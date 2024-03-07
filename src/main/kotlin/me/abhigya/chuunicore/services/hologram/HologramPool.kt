@@ -174,16 +174,22 @@ class HologramPool(
         }
     }
 
-    internal fun respawnHologram(hologram: Hologram) {
+    internal fun respawnHologram(hologram: Hologram, beforeRespawn: () -> Unit = {}) {
         for (uuid in hologram.viewerPages.keys) {
             val player = plugin.server.getPlayer(uuid) ?: continue
-            respawnHologram(hologram, player)
+            despawnHologran(hologram, player)
+        }
+        beforeRespawn()
+        for (uuid in hologram.viewerPages.keys) {
+            val player = plugin.server.getPlayer(uuid) ?: continue
+            spawnHologram(hologram, player)
         }
         hologram.hasChangedContentType = false
     }
 
-    internal fun respawnHologram(hologram: Hologram, player: Player) {
+    internal fun respawnHologram(hologram: Hologram, player: Player, beforeRespawn: () -> Unit = {}) {
         despawnHologran(hologram, player)
+        beforeRespawn()
         spawnHologram(hologram, player)
     }
 
