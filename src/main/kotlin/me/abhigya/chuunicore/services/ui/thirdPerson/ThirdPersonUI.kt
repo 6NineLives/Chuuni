@@ -8,7 +8,9 @@ import com.github.retrooper.packetevents.wrapper.play.server.*
 import io.github.retrooper.packetevents.util.SpigotConversionUtil
 import io.github.retrooper.packetevents.util.SpigotReflectionUtil
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import me.abhigya.chuunicore.ChuuniCorePlugin
+import me.abhigya.chuunicore.ext.BukkitCoroutineDispatcher
 import me.abhigya.chuunicore.ext.send
 import me.abhigya.chuunicore.model.MutableState
 import me.abhigya.chuunicore.model.geometry.*
@@ -16,6 +18,8 @@ import me.abhigya.chuunicore.model.mutableStateOf
 import me.abhigya.chuunicore.services.ui.UI
 import me.abhigya.chuunicore.services.ui.UIButton
 import me.abhigya.chuunicore.services.ui.UIElement
+import net.kyori.adventure.text.Component
+import org.bukkit.DyeColor
 import org.bukkit.World
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -24,6 +28,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerQuitEvent
+import org.bukkit.inventory.ItemStack
 import org.bukkit.util.Vector
 import java.util.*
 
@@ -109,6 +114,11 @@ abstract class ThirdPersonUI(
         buttons.forEach { it.remove() }
 
         WrapperPlayServerDestroyEntities(entity1, entity2).send(host)
+        WrapperPlayServerChangeGameState(WrapperPlayServerChangeGameState.Reason.CHANGE_GAME_MODE, host.gameMode.value.toFloat()).send(host)
+        WrapperPlayServerCamera(host.entityId).send(host)
+        withContext(BukkitCoroutineDispatcher) {
+            host.teleport(host.location)
+        }
         entity2 = -1
         entity1 = -1
     }
@@ -156,6 +166,57 @@ abstract class ThirdPersonUI(
         val height: Double
     )
 
+    protected fun builderScope(block: BuilderScope.() -> Unit) {
+        BuilderScope().apply(block)
+    }
+
+    @Suppress("FunctionName")
+    protected inner class BuilderScope {
+        fun Cursor(
+            defaultIcon: ItemStack,
+            selectIcon: ItemStack,
+            elementDistanceMultiplier: Double = 3.5,
+            intractableDistance: Float = 0.45F,
+            mouseAcceleration: Float = 0.05F
+        ) {
+            cursor = Cursor(this@ThirdPersonUI, defaultIcon, selectIcon, elementDistanceMultiplier, intractableDistance, mouseAcceleration)
+        }
+
+        fun ItemButton(
+            item: MutableState<ItemStack>,
+            relativeLocation: Pos2D,
+            elementDistanceMultiplier: Double = 3.52,
+            onClick: () -> Unit
+        ) {
+            buttons.add(ItemButton(
+                this@ThirdPersonUI,
+                item,
+                relativeLocation,
+                elementDistanceMultiplier,
+                onClick
+            ))
+        }
+
+        fun SignButton(
+            text: MutableState<Array<Component>>,
+            relativeLocation: Pos2D,
+            color: MutableState<DyeColor> = mutableStateOf(DyeColor.BLACK),
+            isGlowing: MutableState<Boolean> = mutableStateOf(false),
+            elementDistanceMultiplier: Double = 5.0,
+            onClick: () -> Unit
+        ) {
+            buttons.add(SignButton(
+                this@ThirdPersonUI,
+                text,
+                color,
+                isGlowing,
+                relativeLocation,
+                elementDistanceMultiplier,
+                onClick
+            ))
+        }
+    }
+
 }
 
 interface TPUIElement : UIElement {
@@ -194,10 +255,10 @@ abstract class AbstractTPUIButton(
 
         val center = ui.location + (ui.direction.toVector().toPos3D() * elementDistanceMultiplier)
         _location = mutableStateOf(when (ui.direction) {
-            ThirdPersonUI.Direction.NORTH -> center + Pos3D(0.0, relativeLocation.y, relativeLocation.x)
-            ThirdPersonUI.Direction.SOUTH -> center + Pos3D(0.0, relativeLocation.y, -relativeLocation.x)
-            ThirdPersonUI.Direction.WEST -> center + Pos3D(-relativeLocation.x, relativeLocation.y, 0.0)
-            ThirdPersonUI.Direction.EAST -> center + Pos3D(relativeLocation.x, relativeLocation.y, 0.0)
+            ThirdPersonUI.Direction.NORTH -> center + Pos3D(relativeLocation.x, relativeLocation.y, 0.0)
+            ThirdPersonUI.Direction.SOUTH -> center + Pos3D(-relativeLocation.x, relativeLocation.y, 0.0)
+            ThirdPersonUI.Direction.WEST -> center + Pos3D(0.0, relativeLocation.y, -relativeLocation.x)
+            ThirdPersonUI.Direction.EAST -> center + Pos3D(0.0, relativeLocation.y, -relativeLocation.x)
         })
     }
 }

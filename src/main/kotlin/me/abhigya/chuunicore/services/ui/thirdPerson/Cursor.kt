@@ -19,7 +19,7 @@ class Cursor(
     val defaultIcon: ItemStack,
     val selectIcon: ItemStack,
     elementDistanceMultiplier: Double = 3.5,
-    private val intractableDistance: Float = 0.35F,
+    private val intractableDistance: Float = 0.45F,
     private val mouseAcceleration: Float = 0.05F
 ) : TPUIElement {
 

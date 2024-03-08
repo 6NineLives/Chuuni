@@ -16,7 +16,7 @@ class Test(
 
     @Command("test")
     fun test(player: Player, direction: ThirdPersonUI.Direction) {
-        CharacterCreationUI(player, player.location.toPos3D(), direction, player.world).run {
+        CharacterCreationUI(player, player.location.toPos3D(), direction, player.location.add(direction.toVector().multiply(5)).toPos3D(), player.world).run {
             runBlocking {
                 render()
             }
