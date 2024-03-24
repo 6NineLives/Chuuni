@@ -3,7 +3,6 @@ package me.abhigya.chuunicore.configuration
 import io.lumine.mythic.api.MythicProvider
 import io.lumine.mythic.api.skills.Skill
 import io.lumine.mythic.api.skills.SkillManager
-import it.unimi.dsi.fastutil.objects.Object2IntArrayMap
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.MapSerializer
@@ -18,6 +17,7 @@ import me.abhigya.chuunicore.model.geometry.Pos2D
 import me.abhigya.chuunicore.model.geometry.Pos3D
 import me.abhigya.chuunicore.model.guardian.rpg.Attribute
 import me.abhigya.chuunicore.model.guardian.rpg.AttributeType
+import me.abhigya.chuunicore.model.guardian.skill.EmptySkill
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
 import toothpick.ktp.delegate.inject
@@ -170,9 +170,9 @@ object AttributeSerializer : KSerializer<Attribute> {
     override val descriptor: SerialDescriptor = inner.descriptor
 
     override fun deserialize(decoder: Decoder): Attribute {
-        val map = Object2IntArrayMap<AttributeType>()
+        val map = Attribute()
         inner.deserialize(decoder).forEach { (s, i) ->
-            map[AttributeType.valueOf(s)] = i
+            map[AttributeType.valueOf(s.uppercase())] = i
         }
         return map
     }
@@ -190,7 +190,7 @@ object SkillSerializer : KSerializer<Skill> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(Skill::class.qualifiedName!!, PrimitiveKind.STRING)
 
     override fun deserialize(decoder: Decoder): Skill {
-        return skillManager.getSkill(decoder.decodeString()).orElseThrow()
+        return skillManager.getSkill(decoder.decodeString()).orElse(EmptySkill)
     }
 
     override fun serialize(encoder: Encoder, value: Skill) {

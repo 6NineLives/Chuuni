@@ -31,8 +31,8 @@ class Hologram(
     private var _clickActions: MutableSet<ClickEvent> = Collections.synchronizedSet(HashSet())
     val clickActions: Set<ClickEvent> get() = _clickActions.toSet()
     
-    var displayRange: Int = 48
-    var updateRange: Int = 48
+    var displayRange: Int = HOLOGRAM_DEFAULT_DISPLAY_RANGE
+    var updateRange: Int = HOLOGRAM_DEFAULT_DISPLAY_RANGE
     var updateInterval: Duration = 20.seconds
 
     var isInverted: Boolean = false

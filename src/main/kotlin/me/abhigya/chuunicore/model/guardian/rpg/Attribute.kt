@@ -1,5 +1,6 @@
 package me.abhigya.chuunicore.model.guardian.rpg
 
+import it.unimi.dsi.fastutil.objects.Object2IntArrayMap
 import it.unimi.dsi.fastutil.objects.Object2IntMap
 import java.text.DecimalFormat
 
@@ -31,4 +32,8 @@ fun AttributeType.getIncrementLore(value: Int): String {
     }
 }
 
-typealias Attribute = Object2IntMap<AttributeType>
+class Attribute : Object2IntMap<AttributeType> by Object2IntArrayMap(AttributeType.entries.associateWith { 0 }) {
+    init {
+        defaultReturnValue(0)
+    }
+}

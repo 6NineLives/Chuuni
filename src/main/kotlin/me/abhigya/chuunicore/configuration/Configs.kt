@@ -12,7 +12,11 @@ import kotlin.io.path.createParentDirectories
 
 interface Configs {
 
+    val mainConfig: ConfigProvider<MainConfig>
+
     val databaseConfig: ConfigProvider<DataBaseSettingsConfig>
+
+    val featuresConfig: ConfigProvider<FeaturesConfig>
 
 }
 
@@ -25,13 +29,19 @@ class SimpleConfigs(
 
     private val dataFolder: Path = plugin.dataFolder.toPath()
 
-    override val databaseConfig = createProvider<DataBaseSettingsConfig>(dataFolder.resolve("database.yml"))
+    override val databaseConfig: ConfigProvider<DataBaseSettingsConfig> = createProvider(dataFolder.resolve("database.yml"))
+
+    override val mainConfig: ConfigProvider<MainConfig> = createProvider(dataFolder.resolve("config.yml"))
+
+    override val featuresConfig: ConfigProvider<FeaturesConfig> = createProvider(dataFolder.resolve("features.yml"))
 
     suspend fun reloadConfigs(): ConfigProvider.Result {
         dataFolder.createDirectories()
 
         return ConfigProvider.Result.combine(listOf(
-            coroutineScope.async { databaseConfig.loadWithDefaults { DataBaseSettingsConfig() } }
+            coroutineScope.async { mainConfig.loadWithDefaults { MainConfig() } },
+            coroutineScope.async { databaseConfig.loadWithDefaults { DataBaseSettingsConfig() } },
+            coroutineScope.async { featuresConfig.loadWithDefaults { FeaturesConfig() } }
         ).awaitAll())
     }
 
